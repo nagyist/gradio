@@ -1,5 +1,11 @@
 # @gradio/audio
 
+## 0.8.1
+
+### Fixes
+
+- [#7158](https://github.com/gradio-app/gradio/pull/7158) [`ded5256`](https://github.com/gradio-app/gradio/commit/ded5256c4a39a84155b9c3d7f4e8e7060d798186) - Fix audio recording events not dispatching.  Thanks [@hannahblair](https://github.com/hannahblair)!
+
 ## 0.8.0
 
 ### Features

@@ -1,5 +1,12 @@
 # @gradio/chatbot
 
+## 0.6.4
+
+### Patch Changes
+
+- Updated dependencies [[`ded5256`](https://github.com/gradio-app/gradio/commit/ded5256c4a39a84155b9c3d7f4e8e7060d798186)]:
+  - @gradio/audio@0.8.1
+
 ## 0.6.3
 
 ### Patch Changes
