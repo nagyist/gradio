@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import logging
 import sys
+import traceback
 from contextlib import contextmanager
 from contextvars import ContextVar
+
+LOGGER = logging.getLogger(__name__)
 
 # See https://pyodide.org/en/stable/usage/faq.html#how-to-detect-that-code-is-run-with-pyodide
 IS_WASM = sys.platform == "emscripten"
@@ -46,5 +50,42 @@ def register_app(_app):
     app_map[app_id] = _app
 
 
+class GradioAppNotFoundError(Exception):
+    pass
+
+
 def get_registered_app(app_id: str):
-    return app_map[app_id]
+    try:
+        return app_map[app_id]
+    except KeyError as e:
+        raise GradioAppNotFoundError(
+            f"Gradio app not found (ID: {app_id}). Forgot to call demo.launch()?"
+        ) from e
+
+
+error_traceback_callback_map = {}
+
+
+def register_error_traceback_callback(app_id, callback):
+    error_traceback_callback_map[app_id] = callback
+
+
+def send_error(error: Exception | None):
+    # The callback registered by the JS process is called with the error traceback
+    # for the WebWorker process to read the traceback.
+
+    if not IS_WASM:
+        return
+    if error is None:
+        return
+
+    app_id = _app_id_context_var.get()
+    callback = error_traceback_callback_map.get(app_id)
+    if not callback:
+        LOGGER.warning(
+            f"Error callback not found for the app ID {app_id}. The error will be ignored."
+        )
+        return
+
+    tb = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+    callback(tb)
