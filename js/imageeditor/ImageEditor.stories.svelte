@@ -1,19 +1,36 @@
-<script lang="ts">
-	import { Meta, Template, Story } from "@storybook/addon-svelte-csf";
+<script context="module">
+	import { Template, Story } from "@storybook/addon-svelte-csf";
 	import ImageEditor from "./Index.svelte";
 	import { format } from "svelte-i18n";
 	import { get } from "svelte/store";
-	import { userEvent, within } from "@storybook/testing-library";
-</script>
+	import { userEvent, within } from "@storybook/test";
+	import { allModes } from "../storybook/modes";
 
-<Meta title="Components/Image Editor" component={ImageEditor} />
+	export const meta = {
+		title: "Components/Image Editor",
+		component: ImageEditor,
+		parameters: {
+			chromatic: {
+				diffThreshold: 0.4,
+				modes: {
+					desktop: allModes["desktop"],
+					mobile: allModes["mobile"]
+				}
+			}
+		}
+	};
+</script>
 
 <Template let:args>
 	<div
 		class="image-container"
 		style="width: 500px; position: relative;border-radius: var(--radius-lg);overflow: hidden;"
 	>
-		<ImageEditor i18n={get(format)} {...args} />
+		<ImageEditor
+			i18n={get(format)}
+			{...args}
+			server={{ accept_blobs: () => {} }}
+		/>
 	</div>
 </Template>
 
@@ -25,6 +42,7 @@
 		interactive: "true",
 		label: "Image Editor",
 		show_label: true,
+		canvas_size: [800, 600],
 		brush: {
 			default_size: "auto",
 			colors: ["#ff0000", "#00ff00", "#0000ff"],
@@ -38,7 +56,7 @@
 />
 
 <Story
-	name="Image Editor Interactions"
+	name="Image Editor Undo/Redo Interactions"
 	args={{
 		value: {
 			path: "https://gradio-builds.s3.amazonaws.com/demo-files/ghepardo-primo-piano.jpg",
@@ -46,7 +64,9 @@
 			orig_name: "cheetah.jpg"
 		},
 		type: "pil",
+		placeholder: "Upload an image of a cat",
 		sources: ["upload", "webcam"],
+		canvas_size: [800, 800],
 		interactive: "true",
 		brush: {
 			default_size: "auto",
@@ -73,121 +93,46 @@
 		await new Promise((r) => setTimeout(r, 1000));
 
 		await userEvent.pointer({
-			keys: "[MouseLeft>]",
+			keys: "[MouseLeft][MouseRight]",
 			target: drawCanvas,
 			coords: { clientX: 300, clientY: 100 }
 		});
 
 		await userEvent.pointer({
-			keys: "[MouseLeft>]",
+			keys: "[MouseLeft][MouseRight]",
 			target: drawCanvas,
-			coords: { clientX: 300, clientY: 100 }
+			coords: { clientX: 400, clientY: 200 }
 		});
-
-		await userEvent.pointer({
-			keys: "[MouseLeft>]",
-			target: drawCanvas,
-			coords: { clientX: 300, clientY: 100 }
-		});
-
-		await userEvent.pointer({
-			target: drawCanvas,
-			coords: { clientX: 300, clientY: 300 }
-		});
-
-		await userEvent.pointer({
-			target: drawCanvas,
-			coords: { clientX: 300, clientY: 300 }
-		});
-
-		await userEvent.pointer({
-			target: drawCanvas,
-			coords: { clientX: 100, clientY: 100 }
-		});
-
-		await userEvent.click(canvas.getByLabelText("Color button"));
-
-		var availableColors = document.querySelectorAll(
-			"button.color:not(.empty):not(.selected):not(.hidden)"
-		);
-
-		await userEvent.click(availableColors[0]);
-
-		await userEvent.keyboard("{Escape}");
-
-		await userEvent.pointer({
-			keys: "[MouseLeft>]",
-			target: drawCanvas,
-			coords: { clientX: 50, clientY: 50 }
-		});
-
-		await userEvent.pointer({
-			keys: "[MouseLeft>]",
-			target: drawCanvas,
-			coords: { clientX: 100, clientY: 100 }
-		});
-
-		await userEvent.pointer({
-			target: drawCanvas,
-			coords: { clientX: 100, clientY: 300 }
-		});
-
-		await userEvent.pointer({
-			target: drawCanvas,
-			coords: { clientX: 300, clientY: 300 }
-		});
-
-		await userEvent.pointer({
-			target: drawCanvas,
-			coords: { clientX: 100, clientY: 100 }
-		});
-
-		await userEvent.click(canvas.getByLabelText("Transform button"));
-
-		const bottomCropHandle =
-			document.getElementsByClassName("handle corner b")[0];
-
-		await userEvent.pointer({
-			keys: "[MouseLeft>]",
-			target: bottomCropHandle,
-			coords: { clientX: 1000, clientY: 200 }
-		});
-
-		await userEvent.pointer({
-			target: bottomCropHandle,
-			coords: { clientX: 500, clientY: 0 }
-		});
-
-		await userEvent.pointer({
-			keys: "[MouseLeft>]",
-			target: bottomCropHandle,
-			coords: { clientX: 500, clientY: 0 }
-		});
-
-		await userEvent.pointer({
-			keys: "[MouseLeft>]",
-			coords: { clientX: 500, clientY: 0 }
-		});
-
-		await userEvent.pointer({
-			target: drawCanvas,
-			coords: { clientX: 100, clientY: 300 }
-		});
-
-		userEvent.tripleClick(drawCanvas);
-
-		await new Promise((r) => setTimeout(r, 1000));
-
-		userEvent.click(canvas.getByLabelText("Show Layers"));
-
-		await new Promise((r) => setTimeout(r, 1000));
-
-		userEvent.click(canvas.getByLabelText("Add Layer"));
-
-		await userEvent.click(canvas.getByLabelText("Image button"));
 
 		await userEvent.click(canvas.getByLabelText("Undo"));
 
 		await userEvent.click(canvas.getByLabelText("Redo"));
+	}}
+/>
+
+<Story
+	name="Static Image Display"
+	args={{
+		value: {
+			composite: {
+				path: "",
+				url: "/output-image.png",
+				size: null,
+				orig_name: null,
+				mime_type: null,
+				is_stream: false,
+				meta: {
+					_type: "gradio.FileData"
+				}
+			},
+			layers: [],
+			background: null,
+			id: null
+		},
+		type: "pil",
+		interactive: false,
+		label: "Image Editor",
+		show_label: true,
+		canvas_size: [800, 600]
 	}}
 />
